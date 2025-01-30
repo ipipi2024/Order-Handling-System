@@ -46,13 +46,18 @@ class CustomerOrder {
         this.isAssigned = false;
     }
     
+    //check if of the same category
     public boolean isCompatibleFor(CustomerOrder other) {
         boolean thisHasBooks = numBooks > 0;
         boolean thisHasElec = numElectronics > 0;
         boolean otherHasBooks = other.numBooks > 0;
         boolean otherHasElec = other.numElectronics > 0;
-        return (thisHasBooks == otherHasBooks && thisHasElec == otherHasElec);
+    
+        return (thisHasBooks == otherHasBooks && thisHasElec == otherHasElec) || 
+               (thisHasBooks == otherHasBooks && !thisHasElec == !otherHasElec) || 
+               (thisHasElec == otherHasElec && !thisHasBooks == !otherHasBooks);
     }
+    
     
     public int getTotalItems() {
         return numBooks + numElectronics;
