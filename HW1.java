@@ -1,6 +1,28 @@
 import java.io.*;
 import java.util.*;
 
+class Event implements Comparable<Event> {
+    String time;
+    String type;
+    String content;
+    
+    public Event(String time, String type, String content) {
+        this.time = time;
+        this.type = type;
+        this.content = content;
+    }
+    
+    @Override
+    public String toString() {
+        return String.format("%s %s %s", type, time, content);
+    }
+    
+    @Override
+    public int compareTo(Event other) {
+        return this.time.compareTo(other.time);
+    }
+}
+
 class CustomerOrder {
     String orderTime;
     String customer;
@@ -90,6 +112,7 @@ public class HW1 {
     private static SinglyLinkedList<String> availableWorkers = new SinglyLinkedList<>();
     private static SinglyLinkedList<WorkerAssignment> workerAssignments = new SinglyLinkedList<>();
     private static int maxFulfillmentTime = 0;
+    private static List<Event> events = new ArrayList<>();
     
     public static void main(String[] args) {
         if (args.length != 1) {
@@ -107,6 +130,11 @@ public class HW1 {
             String line;
             while ((line = reader.readLine()) != null) {
                 processCommand(line.trim());
+            }
+            // Print all events in chronological order
+            Collections.sort(events);
+            for (Event event : events) {
+                System.out.println(event);
             }
         } catch (IOException e) {
             System.err.println("Error reading input file: " + e.getMessage());
@@ -126,8 +154,8 @@ public class HW1 {
                         Integer.parseInt(parts[3]),
                         Integer.parseInt(parts[4])
                     );
-                    System.out.println(order);
-                    //check eligibly to bundle first before procssing order
+                    events.add(new Event(parts[1], "CustomerOrder", 
+                        String.format("%s %d %d", parts[2], Integer.parseInt(parts[3]), Integer.parseInt(parts[4]))));
                     processCustomerOrder(order);
                 }
                 break;
@@ -146,8 +174,8 @@ public class HW1 {
                 
             case "PrintMaxFulfillmentTime":
                 if (parts.length == 2) {
-                    System.out.printf("MaxFulfillmentTime %s %d%n", 
-                        parts[1], maxFulfillmentTime);
+                    events.add(new Event(parts[1], "MaxFulfillmentTime",
+                        String.valueOf(maxFulfillmentTime)));
                 }
                 break;
         }
@@ -171,23 +199,21 @@ public class HW1 {
         // Update max fulfillment time
         maxFulfillmentTime = Math.max(maxFulfillmentTime, processingTime);
         
-        // Print assignment and schedule completion
-        System.out.printf("WorkerAssignment %s %s %s%n",
-            addMinutesToTime(order.orderTime, 5), // 5-minute bundling window
-            worker,
-            String.join(",", assignment.customers));
+        // Add worker assignment event (5-minute bundling window)
+        String assignmentTime = addMinutesToTime(order.orderTime, 5);
+        events.add(new Event(assignmentTime, "WorkerAssignment",
+            String.format("%s %s", worker, String.join(",", assignment.customers))));
             
         workerAssignments.add(assignment);
         
-        // Schedule order completion
-        System.out.printf("OrderCompletion %s %s%n",
-            completionTime,
-            String.join(",", assignment.customers));
+        // Add order completion event
+        events.add(new Event(completionTime, "OrderCompletion",
+            String.join(",", assignment.customers)));
 
-         // Add worker back to available list after completion
-         availableWorkers.add(worker);
+        // Add worker back to available list after completion
+        availableWorkers.add(worker);
 
-         // Remove from worker assignments
+        // Remove from worker assignments
         List<WorkerAssignment> assignments = workerAssignments.toList();
         workerAssignments = new SinglyLinkedList<>();
         for (WorkerAssignment a : assignments) {
@@ -232,9 +258,8 @@ public class HW1 {
     
     private static void printAvailableWorkers(String time) {
         List<String> workers = availableWorkers.toList();
-        System.out.printf("AvailableWorkerList %s %s%n",
-            time,
-            String.join(" ", workers));
+        events.add(new Event(time, "AvailableWorkerList",
+            String.join(" ", workers)));
     }
     
     private static void printWorkerAssignments(String time) {
@@ -245,8 +270,7 @@ public class HW1 {
             assignmentStrings.add(assignment.toString());
         }
         
-        System.out.printf("WorkerAssignmentList %s %s%n",
-            time,
-            String.join(" ", assignmentStrings));
+        events.add(new Event(time, "WorkerAssignmentList",
+            String.join(" ", assignmentStrings)));
     }
 }
